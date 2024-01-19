@@ -22,24 +22,24 @@ impl Default for Options {
 }
 
 impl Options {
-    fn from_args(args: &mut Args, options: &mut Self, arg: String) -> Result<(), String> {
-        match arg.as_str() {
-            "-n"|"--name" => options.name = match args.next() {
+    fn from_args(args: &mut Args, options: &mut Self, arg: &str) -> Result<(), String> {
+        match arg {
+            "n"|"name" => options.name = match args.next() {
                 Some(arg) => arg,
                 None => return Err(format!("Argument {arg} requires a value")),
             },
-            "-v"|"--value" => options.value = match args.next() {
+            "v"|"value" => options.value = match args.next() {
                 Some(arg) => arg,
                 None => return Err(format!("Argument {arg} requires a value")),
             },
-            "-u"|"--number" => options.number = match args.next() {
+            "u"|"number" => options.number = match args.next() {
                 Some(arg) => match arg.parse::<usize>() {
                     Ok(arg) => arg,
                     Err(_) => return Err(format!("Argument {arg} requires a numeric value")),
                 },
                 None => return Err(format!("Argument {arg} requires a value")),
             },
-            "-b"|"--verbose" => options.verbose = true,
+            "b"|"verbose" => options.verbose = true,
             _ => return Err(format!("Unknown argument \"{arg}\"")),
         }
 

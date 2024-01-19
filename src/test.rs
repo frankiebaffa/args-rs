@@ -6,6 +6,7 @@ use {
 struct Options {
     name: String,
     value: String,
+    verbose: bool,
 }
 
 impl Options {
@@ -15,14 +16,15 @@ impl Options {
         arg: &str
     ) -> Result<(), String> {
         match arg {
-            "-n"|"--name" => options.name = match args.next() {
+            "n"|"name" => options.name = match args.next() {
                 Some(name) => name.to_string(),
                 None => return Err("Argument --name requires a value".to_string().into()),
             },
-            "-v"|"--value" => options.value = match args.next() {
+            "v"|"value" => options.value = match args.next() {
                 Some(value) => value.to_string(),
                 None => return Err("Argument --value requires a value".to_string().into()),
             },
+            "b"|"verbose" => options.verbose = true,
             _ => return Err(format!("Unknown argument \"{arg}\"")),
         }
 
@@ -35,11 +37,12 @@ impl Default for Options {
         Self {
             name: String::new(),
             value: String::new(),
+            verbose: false,
         }
     }
 }
 
-impl<'a> ArgsExt for Split<'a, &str> {}
+impl<'a> ArgsExt<&'a str> for Split<'a, &str> {}
 
 #[test]
 fn test() {
@@ -52,6 +55,23 @@ fn test() {
     assert_eq!("Something", options.name);
 
     assert_eq!("TheValue", options.value);
+
+    assert!(!options.verbose);
+}
+
+#[test]
+fn test_2() {
+    let args_s = "-bn Something -v TheValue";
+    let mut args = args_s.split(" ");
+    let mut options = Options::default();
+
+    args.with_args(&mut options, Options::extract).unwrap();
+
+    assert_eq!("Something", options.name);
+
+    assert_eq!("TheValue", options.value);
+
+    assert!(options.verbose);
 }
 
 #[test]
