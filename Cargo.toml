@@ -1,0 +1,10 @@
+[package]
+name = "args"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "cli-test"
+path = "./src/bin/cli_test.rs"
+
+[dependencies]
