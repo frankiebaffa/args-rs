@@ -3,7 +3,7 @@
 
 use std::{
     env::args,
-    error::Error,
+    io::{ Error, ErrorKind, Result, },
     vec::IntoIter,
 };
 
@@ -102,12 +102,33 @@ impl Argument {
     }
 }
 
-pub struct Arguments;
+pub struct Arguments(IntoIter<Argument>);
 impl Arguments {
-    pub fn with_args<T, F, E>(default: &mut T, do_while: F) -> Result<(), E>
+    pub fn next(&mut self) -> Option<Argument> {
+        self.0.next()
+    }
+
+    pub fn enforce_next_value(&mut self, prev: Argument) -> Result<String> {
+        match self.next() {
+            Some(i) => match i.option_type() {
+                OptionType::Value(_) => {
+                    Ok(i.qualifier().to_owned())
+                },
+                _ => return Err(Error::new(
+                    ErrorKind::Other,
+                    format!("{} requires a value.", prev.to_string()),
+                )),
+            },
+            None => return Err(Error::new(
+                ErrorKind::Other,
+                format!("{} requires a value.", prev.to_string()),
+            )),
+        }
+    }
+
+    pub fn with_args<T, F>(default: &mut T, do_while: F) -> Result<()>
     where
-        E: Error,
-        F: Fn(&mut IntoIter<Argument>, &mut T, Argument) -> Result<(), E>,
+        F: Fn(&mut Arguments, &mut T, Argument) -> Result<()>,
     {
         let mut std_args = args();
         std_args.next(); // dump first
@@ -131,14 +152,15 @@ impl Arguments {
             .collect::<Vec<OptionType>>();
         let max = args.len() - 1;
 
-        let mut args = args.into_iter().enumerate()
+        let mut args = Arguments(args.into_iter().enumerate()
             .map(|(idx, arg)| Argument {
                 option_type: arg,
                 position: idx,
                 max_position: max,
             })
             .collect::<Vec<Argument>>()
-            .into_iter();
+            .into_iter()
+        );
 
         while let Some(arg) = args.next() {
             do_while(&mut args, default, arg)?;
