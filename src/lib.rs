@@ -73,6 +73,10 @@ impl Argument {
         self.position
     }
 
+    pub fn max_position(&self) -> usize {
+        self.max_position
+    }
+
     pub fn from_last(&self) -> usize {
         self.max_position - self.position
     }
@@ -125,7 +129,7 @@ impl Arguments {
             })
             .flatten()
             .collect::<Vec<OptionType>>();
-        let max = args.len();
+        let max = args.len() - 1;
 
         let mut args = args.into_iter().enumerate()
             .map(|(idx, arg)| Argument {

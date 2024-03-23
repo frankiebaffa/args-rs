@@ -3,4 +3,8 @@ name = "args"
 version = "1.1.0"
 edition = "2021"
 
+[[bin]]
+name = "test"
+path = "./bin/test.rs"
+
 [dependencies]
