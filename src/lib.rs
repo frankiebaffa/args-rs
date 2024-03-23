@@ -108,7 +108,7 @@ impl Arguments {
         self.0.next()
     }
 
-    pub fn enforce_next_value(&mut self, prev: Argument) -> Result<String> {
+    pub fn enforce_next_value(&mut self, prev: &Argument) -> Result<String> {
         match self.next() {
             Some(i) => match i.option_type() {
                 OptionType::Value(_) => {
