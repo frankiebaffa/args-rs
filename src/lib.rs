@@ -23,6 +23,10 @@ pub struct Argument {
     max_position: usize,
 }
 
+pub fn err<T, Str: AsRef<str>>(message: Str) -> Result<T> {
+    Err(Error::new(ErrorKind::Other, message.as_ref().to_owned()))
+}
+
 impl Argument {
     pub fn qualifier(&self) -> &str {
         match &self.option_type() {
@@ -114,15 +118,9 @@ impl Arguments {
                 OptionType::Value(_) => {
                     Ok(i.qualifier().to_owned())
                 },
-                _ => return Err(Error::new(
-                    ErrorKind::Other,
-                    format!("{} requires a value.", prev.to_string()),
-                )),
+                _ => return err(format!("{} requires a value.", prev.to_string())),
             },
-            None => return Err(Error::new(
-                ErrorKind::Other,
-                format!("{} requires a value.", prev.to_string()),
-            )),
+            None => return err(format!("{} requires a value.", prev.to_string())),
         }
     }
 
