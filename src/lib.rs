@@ -82,7 +82,7 @@ impl Argument {
     }
 
     pub fn from_last(&self) -> usize {
-        self.max_position - self.position
+        (self.max_position - 1) - self.position
     }
 
     pub fn is_n_from_last(&self, n: usize) -> bool {
@@ -148,7 +148,8 @@ impl Arguments {
             })
             .flatten()
             .collect::<Vec<OptionType>>();
-        let max = args.len() - 1;
+
+        let max = args.len();
 
         let mut args = Arguments(args.into_iter().enumerate()
             .map(|(idx, arg)| Argument {
