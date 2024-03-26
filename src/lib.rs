@@ -27,6 +27,18 @@ pub fn err<T, Str: AsRef<str>>(message: Str) -> Result<T> {
     Err(Error::new(ErrorKind::Other, message.as_ref().to_owned()))
 }
 
+impl ToString for Argument {
+    fn to_string(&self) -> String {
+        match &self.option_type() {
+            OptionType::Argument(arg) => match arg {
+                ArgumentType::Short(q) => format!("-{q}"),
+                ArgumentType::Long(q) => format!("--{q}"),
+            },
+            OptionType::Value(s) => s.to_owned(),
+        }
+    }
+}
+
 impl Argument {
     pub fn qualifier(&self) -> &str {
         match &self.option_type() {
@@ -38,39 +50,20 @@ impl Argument {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        match &self.option_type() {
-            OptionType::Argument(arg) => match arg {
-                ArgumentType::Short(q) => format!("-{q}"),
-                ArgumentType::Long(q) => format!("--{q}"),
-            },
-            OptionType::Value(s) => s.to_owned(),
-        }
-    }
-
     pub fn option_type(&self) -> &OptionType {
         &self.option_type
     }
 
     pub fn is_short(&self) -> bool {
-        match self.option_type() {
-            OptionType::Argument(ArgumentType::Short(_)) => true,
-            _ => false,
-        }
+        matches!(self.option_type(), OptionType::Argument(ArgumentType::Short(_)))
     }
 
     pub fn is_long(&self) -> bool {
-        match self.option_type() {
-            OptionType::Argument(ArgumentType::Long(_)) => true,
-            _ => false,
-        }
+        matches!(self.option_type(), OptionType::Argument(ArgumentType::Long(_)))
     }
 
     pub fn is_value(&self) -> bool {
-        match self.option_type() {
-            OptionType::Value(_) => true,
-            _ => false,
-        }
+        matches!(self.option_type(), OptionType::Value(_))
     }
 
     pub fn position(&self) -> usize {
@@ -108,19 +101,19 @@ impl Argument {
 
 pub struct Arguments(IntoIter<Argument>);
 impl Arguments {
-    pub fn next(&mut self) -> Option<Argument> {
+    pub fn next_arg(&mut self) -> Option<Argument> {
         self.0.next()
     }
 
     pub fn enforce_next_value(&mut self, prev: &Argument) -> Result<String> {
-        match self.next() {
+        match self.next_arg() {
             Some(i) => match i.option_type() {
                 OptionType::Value(_) => {
                     Ok(i.qualifier().to_owned())
                 },
-                _ => return err(format!("{} requires a value.", prev.to_string())),
+                _ => err(format!("{} requires a value.", prev.to_string())),
             },
-            None => return err(format!("{} requires a value.", prev.to_string())),
+            None => err(format!("{} requires a value.", prev.to_string())),
         }
     }
 
@@ -134,19 +127,17 @@ impl Arguments {
         let mut std_args = args();
         std_args.next();
         let args = std_args
-            .map(|arg| {
-                if arg.starts_with("--") {
-                    let arg = &arg[2..];
+            .flat_map(|arg| {
+                if let Some(arg) = arg.strip_prefix("--") {
                     vec![OptionType::Argument(ArgumentType::Long(arg.to_owned()))]
-                } else if arg.starts_with("-") {
-                    arg[1..].chars().map(|arg| {
+                } else if let Some(arg) = arg.strip_prefix('-') {
+                    arg.chars().map(|arg| {
                         OptionType::Argument(ArgumentType::Short(arg.to_string()))
                     }).collect::<Vec<OptionType>>()
                 } else {
                     vec![OptionType::Value(arg)]
                 }
             })
-            .flatten()
             .collect::<Vec<OptionType>>();
 
         let max = args.len();
@@ -161,7 +152,7 @@ impl Arguments {
             .into_iter()
         );
 
-        while let Some(arg) = args.next() {
+        while let Some(arg) = args.next_arg() {
             do_while(&mut args, default, arg)?;
         }
         Ok(())
