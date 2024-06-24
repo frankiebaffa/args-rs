@@ -3,6 +3,7 @@
 
 use std::{
     env::args,
+    fmt::{ Display, Formatter, Result as FmtResult, },
     io::{ Error, ErrorKind, Result, },
     vec::IntoIter,
 };
@@ -27,14 +28,14 @@ pub fn err<T, Str: AsRef<str>>(message: Str) -> Result<T> {
     Err(Error::new(ErrorKind::Other, message.as_ref().to_owned()))
 }
 
-impl ToString for Argument {
-    fn to_string(&self) -> String {
+impl Display for Argument {
+    fn fmt(&self, fmtr: &mut Formatter<'_>) -> FmtResult {
         match &self.option_type() {
             OptionType::Argument(arg) => match arg {
-                ArgumentType::Short(q) => format!("-{q}"),
-                ArgumentType::Long(q) => format!("--{q}"),
+                ArgumentType::Short(q) => fmtr.write_fmt(format_args!("-{q}")),
+                ArgumentType::Long(q) => fmtr.write_fmt(format_args!("--{q}")),
             },
-            OptionType::Value(s) => s.to_owned(),
+            OptionType::Value(s) => fmtr.write_str(s),
         }
     }
 }
@@ -111,9 +112,9 @@ impl Arguments {
                 OptionType::Value(_) => {
                     Ok(i.qualifier().to_owned())
                 },
-                _ => err(format!("{} requires a value.", prev.to_string())),
+                _ => err(format!("{} requires a value.", prev)),
             },
-            None => err(format!("{} requires a value.", prev.to_string())),
+            None => err(format!("{} requires a value.", prev)),
         }
     }
 
